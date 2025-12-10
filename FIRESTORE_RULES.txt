@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only read/write their own cards
+    match /cards/{cardId} {
+      // Allow read if user is authenticated and owns the card
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Allow create if user is authenticated and sets their own userId
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      
+      // Allow update/delete if user is authenticated and owns the card
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Users can only read/write their own study sets
+    match /studySets/{setId} {
+      // Allow read if user is authenticated and owns the set
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Allow create if user is authenticated and sets their own userId
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      
+      // Allow update/delete if user is authenticated and owns the set
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+  }
+}
+
