@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated } from 'react-native';
-import { colors } from '../constants/colors';
+// import { colors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function FlashCard({ card }) {
+  const { theme } = useTheme();
   const [flipped, setFlipped] = useState(false);
   const [flipAnimation] = useState(new Animated.Value(0));
 
@@ -51,17 +53,27 @@ export default function FlashCard({ card }) {
         style={styles.cardContainer}
       >
         <Animated.View
-          style={[styles.card, styles.cardFront, frontAnimatedStyle]}
+          style={[
+            styles.card,
+            styles.cardFront,
+            frontAnimatedStyle,
+            { backgroundColor: theme.surface, borderColor: theme.border, shadowColor: theme.cardShadow }
+          ]}
         >
-          <Text style={styles.label}>Question</Text>
-          <Text style={styles.text}>{card.question}</Text>
-          <Text style={styles.tapHint}>Tap to flip</Text>
+          <Text style={[styles.label, { color: theme.textLight }]}>Question</Text>
+          <Text style={[styles.text, { color: theme.text }]}>{card.question}</Text>
+          <Text style={[styles.tapHint, { color: theme.textLight }]}>Tap to flip</Text>
         </Animated.View>
         <Animated.View
-          style={[styles.card, styles.cardBack, backAnimatedStyle]}
+          style={[
+            styles.card,
+            styles.cardBack,
+            backAnimatedStyle,
+            { backgroundColor: theme.primary, shadowColor: theme.cardShadow }
+          ]}
         >
           <Text style={[styles.label, { color: 'rgba(255,255,255,0.8)' }]}>Answer</Text>
-          <Text style={[styles.text, { color: colors.white }]}>{card.answer}</Text>
+          <Text style={[styles.text, { color: '#FFFFFF' }]}>{card.answer}</Text>
           <Text style={[styles.tapHint, { color: 'rgba(255,255,255,0.7)' }]}>Tap to flip</Text>
         </Animated.View>
       </TouchableOpacity>
@@ -88,7 +100,7 @@ const styles = StyleSheet.create({
     padding: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: {
       width: 0,
       height: 4,
@@ -98,18 +110,18 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   cardFront: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderWidth: 1,
-    borderColor: colors.border,
+    // borderColor: handled dynamically
   },
   cardBack: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     transform: [{ rotateY: '180deg' }],
   },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.textLight,
+    // color: handled dynamically
     marginBottom: 15,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -117,7 +129,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 24,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     textAlign: 'center',
     lineHeight: 36,
   },
@@ -125,7 +137,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     fontSize: 12,
-    color: colors.textLight,
+    // color: handled dynamically
     fontStyle: 'italic',
   },
 });

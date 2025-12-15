@@ -7,9 +7,11 @@ import {
   SafeAreaView,
   ScrollView,
 } from 'react-native';
-import { colors } from '../../constants/colors';
+// import { colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function TestMode({ cards }) {
+  const { theme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showResult, setShowResult] = useState(false);
@@ -62,14 +64,14 @@ export default function TestMode({ cards }) {
   if (!currentCard) {
     const percentage = Math.round((score / cards.length) * 100);
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView contentContainerStyle={styles.completionContainer}>
-          <View style={styles.completionCard}>
-            <Text style={styles.completionTitle}>Test Complete!</Text>
-            <Text style={styles.completionScore}>
+          <View style={[styles.completionCard, { backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}>
+            <Text style={[styles.completionTitle, { color: theme.primary }]}>Test Complete!</Text>
+            <Text style={[styles.completionScore, { color: theme.text }]}>
               {score} / {cards.length}
             </Text>
-            <Text style={styles.completionPercentage}>{percentage}%</Text>
+            <Text style={[styles.completionPercentage, { color: theme.primary }]}>{percentage}%</Text>
             <View style={styles.resultsList}>
               {answers.map((answer, index) => (
                 <View
@@ -77,11 +79,11 @@ export default function TestMode({ cards }) {
                   style={[
                     styles.resultItem,
                     answer.isCorrect
-                      ? styles.resultItemCorrect
-                      : styles.resultItemIncorrect,
+                      ? { backgroundColor: theme.success + '20' }
+                      : { backgroundColor: theme.error + '20' },
                   ]}
                 >
-                  <Text style={styles.resultItemText}>
+                  <Text style={[styles.resultItemText, { color: theme.text }]}>
                     {answer.isCorrect ? '✓' : '✗'} {answer.question}
                   </Text>
                 </View>
@@ -94,20 +96,20 @@ export default function TestMode({ cards }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.progressBar}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
         <View
           style={[
             styles.progressFill,
-            { width: `${((currentIndex + 1) / cards.length) * 100}%` },
+            { width: `${((currentIndex + 1) / cards.length) * 100}%`, backgroundColor: theme.primary },
           ]}
         />
       </View>
 
       <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Question</Text>
-          <Text style={styles.cardText}>{currentCard.question}</Text>
+        <View style={[styles.card, { backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}>
+          <Text style={[styles.cardLabel, { color: theme.textLight }]}>Question</Text>
+          <Text style={[styles.cardText, { color: theme.text }]}>{currentCard.question}</Text>
         </View>
 
         <View style={styles.optionsContainer}>
@@ -122,9 +124,10 @@ export default function TestMode({ cards }) {
                 key={index}
                 style={[
                   styles.option,
-                  isSelected && !showResult && styles.optionSelected,
-                  showCorrect && styles.optionCorrect,
-                  showIncorrect && styles.optionIncorrect,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
+                  isSelected && !showResult && { borderColor: theme.primary, backgroundColor: theme.primary + '10' },
+                  showCorrect && { borderColor: theme.success, backgroundColor: theme.success + '20' },
+                  showIncorrect && { borderColor: theme.error, backgroundColor: theme.error + '20' },
                 ]}
                 onPress={() => handleSelectAnswer(option)}
                 disabled={showResult}
@@ -132,9 +135,10 @@ export default function TestMode({ cards }) {
                 <Text
                   style={[
                     styles.optionText,
-                    isSelected && !showResult && styles.optionTextSelected,
-                    showCorrect && styles.optionTextCorrect,
-                    showIncorrect && styles.optionTextIncorrect,
+                    { color: theme.text },
+                    isSelected && !showResult && { color: theme.primary, fontWeight: '600' },
+                    showCorrect && { color: theme.success, fontWeight: '600' },
+                    showIncorrect && { color: theme.error, fontWeight: '600' },
                   ]}
                 >
                   {option}
@@ -148,6 +152,7 @@ export default function TestMode({ cards }) {
           <TouchableOpacity
             style={[
               styles.submitButton,
+              { backgroundColor: theme.primary },
               selectedAnswer === null && styles.submitButtonDisabled,
             ]}
             onPress={handleSubmit}
@@ -156,13 +161,13 @@ export default function TestMode({ cards }) {
             <Text style={styles.submitButtonText}>Submit Answer</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <TouchableOpacity style={[styles.nextButton, { backgroundColor: theme.primary }]} onPress={handleNext}>
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <Text style={styles.progressText}>
+      <Text style={[styles.progressText, { color: theme.textLight }]}>
         {currentIndex + 1} of {cards.length} | Score: {score}
       </Text>
     </SafeAreaView>
@@ -172,29 +177,29 @@ export default function TestMode({ cards }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    // backgroundColor: handled dynamically
     padding: 20,
   },
   progressBar: {
     height: 4,
-    backgroundColor: colors.border,
+    // backgroundColor: handled dynamically
     borderRadius: 2,
     marginBottom: 20,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
   },
   cardContainer: {
     flex: 1,
   },
   card: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 16,
     padding: 24,
     marginBottom: 20,
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -203,7 +208,7 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.textLight,
+    // color: handled dynamically
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 12,
@@ -211,50 +216,32 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     lineHeight: 28,
   },
   optionsContainer: {
     marginBottom: 20,
   },
   option: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderWidth: 2,
-    borderColor: colors.border,
+    // borderColor: handled dynamically
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
   },
-  optionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
-  },
-  optionCorrect: {
-    borderColor: colors.success,
-    backgroundColor: colors.success + '20',
-  },
-  optionIncorrect: {
-    borderColor: colors.error,
-    backgroundColor: colors.error + '20',
-  },
+  // optionSelected: handled inline
+  // optionCorrect: handled inline
+  // optionIncorrect: handled inline
   optionText: {
     fontSize: 16,
-    color: colors.text,
+    // color: handled dynamically
   },
-  optionTextSelected: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  optionTextCorrect: {
-    color: colors.success,
-    fontWeight: '600',
-  },
-  optionTextIncorrect: {
-    color: colors.error,
-    fontWeight: '600',
-  },
+  // optionTextSelected: handled inline
+  // optionTextCorrect: handled inline
+  // optionTextIncorrect: handled inline
   submitButton: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
@@ -263,25 +250,25 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   submitButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
   },
   nextButton: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
   },
   nextButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
   },
   progressText: {
     textAlign: 'center',
     fontSize: 14,
-    color: colors.textLight,
+    // color: handled dynamically
     marginTop: 20,
   },
   completionContainer: {
@@ -289,10 +276,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   completionCard: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 16,
     padding: 32,
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -301,21 +288,21 @@ const styles = StyleSheet.create({
   completionTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: colors.primary,
+    // color: handled dynamically
     textAlign: 'center',
     marginBottom: 16,
   },
   completionScore: {
     fontSize: 24,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     textAlign: 'center',
     marginBottom: 8,
   },
   completionPercentage: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: colors.primary,
+    // color: handled dynamically
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -327,15 +314,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
   },
-  resultItemCorrect: {
-    backgroundColor: colors.success + '20',
-  },
-  resultItemIncorrect: {
-    backgroundColor: colors.error + '20',
-  },
+  // resultItemCorrect: handled inline
+  // resultItemIncorrect: handled inline
   resultItemText: {
     fontSize: 14,
-    color: colors.text,
+    // color: handled dynamically
   },
 });
 

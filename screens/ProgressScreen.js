@@ -6,8 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Switch,
 } from 'react-native';
-import { colors } from '../constants/colors';
+// import { colors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
@@ -16,6 +18,7 @@ import { getCards } from '../services/cardsService';
 import { getStudySets } from '../services/setsService';
 
 export default function ProgressScreen() {
+  const { theme, isDark, toggleTheme } = useTheme();
   const { user } = useAuth();
   const [cards, setCards] = useState([]);
   const [sets, setSets] = useState([]);
@@ -70,25 +73,25 @@ export default function ProgressScreen() {
   };
 
   const StatCard = ({ title, value, subtitle, icon, color }) => (
-    <View style={[styles.statCard, { borderTopColor: color }]}>
+    <View style={[styles.statCard, { borderTopColor: color, backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}>
       <Text style={styles.statIcon}>{icon}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
+      <Text style={[styles.statTitle, { color: theme.textLight }]}>{title}</Text>
       <Text style={[styles.statValue, { color }]}>{value}</Text>
-      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+      {subtitle && <Text style={[styles.statSubtitle, { color: theme.textLight }]}>{subtitle}</Text>}
     </View>
   );
 
   const ProgressBar = ({ label, value, max, color }) => {
     const percentage = max > 0 ? (value / max) * 100 : 0;
     return (
-      <View style={styles.progressBarContainer}>
+      <View style={[styles.progressBarContainer, { backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}>
         <View style={styles.progressBarHeader}>
-          <Text style={styles.progressBarLabel}>{label}</Text>
-          <Text style={styles.progressBarValue}>
+          <Text style={[styles.progressBarLabel, { color: theme.text }]}>{label}</Text>
+          <Text style={[styles.progressBarValue, { color: theme.textLight }]}>
             {value} / {max}
           </Text>
         </View>
-        <View style={styles.progressBar}>
+        <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
           <View
             style={[
               styles.progressBarFill,
@@ -105,51 +108,64 @@ export default function ProgressScreen() {
       ? new Date(card.lastStudied.toDate()).toLocaleDateString()
       : 'Never';
     return (
-      <View style={styles.activityCard}>
+      <View style={[styles.activityCard, { backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}>
         <View style={styles.activityCardContent}>
-          <Text style={styles.activityCardQuestion} numberOfLines={1}>
+          <Text style={[styles.activityCardQuestion, { color: theme.text }]} numberOfLines={1}>
             {card.question}
           </Text>
-          <Text style={styles.activityCardAnswer} numberOfLines={1}>
+          <Text style={[styles.activityCardAnswer, { color: theme.textLight }]} numberOfLines={1}>
             {card.answer}
           </Text>
         </View>
-        <View style={styles.activityCardMeta}>
+        <View style={[styles.activityCardMeta, { borderTopColor: theme.border }]}>
           <View
             style={[
               styles.masteryBadge,
-              card.mastered ? styles.masteryBadgeDone : styles.masteryBadgePending,
+              card.mastered ? { backgroundColor: theme.success + '20' } : { backgroundColor: theme.warning + '20' },
             ]}
           >
-            <Text style={styles.masteryBadgeText}>
+            <Text style={[styles.masteryBadgeText, { color: theme.text }]}>
               {card.mastered ? '✓ Mastered' : '○ Learning'}
             </Text>
           </View>
-          <Text style={styles.activityCardDate}>{lastStudied}</Text>
+          <Text style={[styles.activityCardDate, { color: theme.textLight }]}>{lastStudied}</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>Progress</Text>
-        <Text style={styles.subtitle}>Track your learning journey</Text>
+        <View>
+          <Text style={[styles.title, { color: theme.text }]}>Profile</Text>
+          <Text style={[styles.subtitle, { color: theme.textLight }]}>Your stats and achievements</Text>
+        </View>
+        <View style={styles.themeToggle}>
+          <Text style={{ color: theme.text, marginRight: 8 }}>{isDark ? '🌙' : '☀️'}</Text>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: theme.primaryLight }}
+            thumbColor={isDark ? theme.primary : '#f4f3f4'}
+          />
+        </View>
       </View>
 
       <View style={styles.periodSelector}>
         <TouchableOpacity
           style={[
             styles.periodButton,
-            selectedPeriod === 'week' && styles.periodButtonActive,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+            selectedPeriod === 'week' && { backgroundColor: theme.primary, borderColor: theme.primary },
           ]}
           onPress={() => setSelectedPeriod('week')}
         >
           <Text
             style={[
               styles.periodButtonText,
-              selectedPeriod === 'week' && styles.periodButtonTextActive,
+              { color: theme.text },
+              selectedPeriod === 'week' && { color: '#FFFFFF' },
             ]}
           >
             Week
@@ -158,14 +174,16 @@ export default function ProgressScreen() {
         <TouchableOpacity
           style={[
             styles.periodButton,
-            selectedPeriod === 'month' && styles.periodButtonActive,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+            selectedPeriod === 'month' && { backgroundColor: theme.primary, borderColor: theme.primary },
           ]}
           onPress={() => setSelectedPeriod('month')}
         >
           <Text
             style={[
               styles.periodButtonText,
-              selectedPeriod === 'month' && styles.periodButtonTextActive,
+              { color: theme.text },
+              selectedPeriod === 'month' && { color: '#FFFFFF' },
             ]}
           >
             Month
@@ -174,14 +192,16 @@ export default function ProgressScreen() {
         <TouchableOpacity
           style={[
             styles.periodButton,
-            selectedPeriod === 'all' && styles.periodButtonActive,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+            selectedPeriod === 'all' && { backgroundColor: theme.primary, borderColor: theme.primary },
           ]}
           onPress={() => setSelectedPeriod('all')}
         >
           <Text
             style={[
               styles.periodButtonText,
-              selectedPeriod === 'all' && styles.periodButtonTextActive,
+              { color: theme.text },
+              selectedPeriod === 'all' && { color: '#FFFFFF' },
             ]}
           >
             All Time
@@ -195,46 +215,46 @@ export default function ProgressScreen() {
           value={stats.totalCards}
           subtitle="Created"
           icon="📚"
-          color={colors.primary}
+          color={theme.primary}
         />
         <StatCard
           title="Mastered"
           value={stats.masteredCards}
           subtitle={`${stats.masteryRate}% complete`}
           icon="✅"
-          color={colors.success}
+          color={theme.success}
         />
         <StatCard
           title="Study Sessions"
           value={stats.totalStudyTime}
           subtitle="Times studied"
           icon="🔥"
-          color={colors.warning}
+          color={theme.warning}
         />
         <StatCard
           title="Recent Activity"
           value={stats.recentActivity}
           subtitle={`This ${selectedPeriod}`}
           icon="📈"
-          color={colors.primaryLight}
+          color={theme.primaryLight}
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mastery Progress</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Mastery Progress</Text>
         <ProgressBar
           label="Cards Mastered"
           value={stats.masteredCards}
           max={stats.totalCards}
-          color={colors.success}
+          color={theme.success}
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
         {getFilteredCards().length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
+          <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.emptyStateText, { color: theme.textLight }]}>
               No activity in this period
             </Text>
           </View>
@@ -253,7 +273,7 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    // backgroundColor: handled dynamically
   },
   content: {
     padding: isMobile ? 16 : 24,
@@ -261,16 +281,23 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: isMobile ? 20 : 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  themeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
     fontSize: isMobile ? 24 : 32,
     fontWeight: 'bold',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 8,
   },
   subtitle: {
     fontSize: isMobile ? 14 : 16,
-    color: colors.textLight,
+    // color: handled dynamically
   },
   periodSelector: {
     flexDirection: 'row',
@@ -282,22 +309,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderWidth: 1,
-    borderColor: colors.border,
+    // borderColor: handled dynamically
     alignItems: 'center',
   },
   periodButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    // backgroundColor: handled dynamically
+    // borderColor: handled dynamically
   },
   periodButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
   },
   periodButtonTextActive: {
-    color: colors.white,
+    color: '#FFFFFF',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -306,12 +333,12 @@ const styles = StyleSheet.create({
     gap: isMobile ? 12 : 16,
   },
   statCard: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: isMobile ? 12 : 16,
     padding: isMobile ? 16 : 20,
     width: isMobile ? '100%' : '48%',
     borderTopWidth: 4,
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -325,7 +352,7 @@ const styles = StyleSheet.create({
   statTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textLight,
+    // color: handled dynamically
     marginBottom: 8,
   },
   statValue: {
@@ -335,7 +362,7 @@ const styles = StyleSheet.create({
   },
   statSubtitle: {
     fontSize: 12,
-    color: colors.textLight,
+    // color: handled dynamically
   },
   section: {
     marginBottom: 24,
@@ -343,14 +370,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 16,
   },
   progressBarContainer: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 12,
     padding: 16,
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -364,16 +391,16 @@ const styles = StyleSheet.create({
   progressBarLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
   },
   progressBarValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textLight,
+    // color: handled dynamically
   },
   progressBar: {
     height: 8,
-    backgroundColor: colors.border,
+    // backgroundColor: handled dynamically
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -382,11 +409,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   activityCard: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -398,12 +425,12 @@ const styles = StyleSheet.create({
   activityCardQuestion: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 4,
   },
   activityCardAnswer: {
     fontSize: 14,
-    color: colors.textLight,
+    // color: handled dynamically
   },
   activityCardMeta: {
     flexDirection: 'row',
@@ -411,37 +438,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    // borderTopColor: handled dynamically
   },
   masteryBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
-  masteryBadgeDone: {
-    backgroundColor: colors.success + '20',
-  },
-  masteryBadgePending: {
-    backgroundColor: colors.warning + '20',
-  },
+  // masteryBadgeDone: handled inline
+  // masteryBadgePending: handled inline
   masteryBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
   },
   activityCardDate: {
     fontSize: 12,
-    color: colors.textLight,
+    // color: handled dynamically
   },
   emptyState: {
     padding: 40,
     alignItems: 'center',
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 12,
   },
   emptyStateText: {
     fontSize: 16,
-    color: colors.textLight,
+    // color: handled dynamically
   },
 });
 

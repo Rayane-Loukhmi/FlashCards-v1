@@ -10,12 +10,14 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import { colors } from '../constants/colors';
+// import { colors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
 
 export default function CardList({ cards, onDelete, onEdit, onAdd, onMarkAsDone }) {
+  const { theme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [question, setQuestion] = useState('');
@@ -71,19 +73,19 @@ export default function CardList({ cards, onDelete, onEdit, onAdd, onMarkAsDone 
       <ScrollView style={styles.scrollView}>
         {cards.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No flashcards yet</Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Text style={[styles.emptyStateText, { color: theme.textLight }]}>No flashcards yet</Text>
+            <Text style={[styles.emptyStateSubtext, { color: theme.textLight }]}>
               Tap the + button to add your first card
             </Text>
           </View>
         ) : (
           cards.map((card) => (
-            <View key={card.id} style={styles.cardItem}>
+            <View key={card.id} style={[styles.cardItem, { backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}>
               <View style={styles.cardContent}>
-                <Text style={styles.cardQuestion} numberOfLines={2}>
+                <Text style={[styles.cardQuestion, { color: theme.text }]} numberOfLines={2}>
                   {card.question}
                 </Text>
-                <Text style={styles.cardAnswer} numberOfLines={1}>
+                <Text style={[styles.cardAnswer, { color: theme.textLight }]} numberOfLines={1}>
                   {card.answer}
                 </Text>
               </View>
@@ -91,7 +93,8 @@ export default function CardList({ cards, onDelete, onEdit, onAdd, onMarkAsDone 
                 <TouchableOpacity
                   style={[
                     styles.masteryButton,
-                    card.mastered && styles.masteryButtonDone,
+                    { backgroundColor: theme.border },
+                    card.mastered && { backgroundColor: theme.success + '20' },
                     { marginRight: 10 },
                   ]}
                   onPress={() => onMarkAsDone && onMarkAsDone(card.id, !card.mastered)}
@@ -99,20 +102,21 @@ export default function CardList({ cards, onDelete, onEdit, onAdd, onMarkAsDone 
                   <Text
                     style={[
                       styles.masteryButtonText,
-                      card.mastered && styles.masteryButtonTextDone,
+                      { color: theme.text },
+                      card.mastered && { color: theme.success },
                     ]}
                   >
                     {card.mastered ? '✓ Mastered' : '○ Mark Done'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.editButton, { marginRight: 10 }]}
+                  style={[styles.editButton, { backgroundColor: theme.primary, marginRight: 10 }]}
                   onPress={() => openEditModal(card)}
                 >
                   <Text style={styles.editButtonText}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.deleteButton}
+                  style={[styles.deleteButton, { backgroundColor: theme.error }]}
                   onPress={() => handleDelete(card)}
                 >
                   <Text style={styles.deleteButtonText}>Delete</Text>
@@ -123,7 +127,7 @@ export default function CardList({ cards, onDelete, onEdit, onAdd, onMarkAsDone 
         )}
       </ScrollView>
 
-      <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
+      <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.primary, shadowColor: theme.cardShadow }]} onPress={openAddModal}>
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
 
@@ -134,24 +138,34 @@ export default function CardList({ cards, onDelete, onEdit, onAdd, onMarkAsDone 
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
               {editingCard ? 'Edit Card' : 'Add New Card'}
             </Text>
 
-            <Text style={styles.inputLabel}>Question</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Question</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, {
+                backgroundColor: theme.surface === '#FFFFFF' ? '#fff' : theme.background,
+                borderColor: theme.border,
+                color: theme.text
+              }]}
               placeholder="Enter question"
+              placeholderTextColor={theme.textLight}
               value={question}
               onChangeText={setQuestion}
               multiline
             />
 
-            <Text style={styles.inputLabel}>Answer</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Answer</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, {
+                backgroundColor: theme.surface === '#FFFFFF' ? '#fff' : theme.background,
+                borderColor: theme.border,
+                color: theme.text
+              }]}
               placeholder="Enter answer"
+              placeholderTextColor={theme.textLight}
               value={answer}
               onChangeText={setAnswer}
               multiline
@@ -159,13 +173,13 @@ export default function CardList({ cards, onDelete, onEdit, onAdd, onMarkAsDone 
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton, { marginRight: 12 }]}
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.border, marginRight: 12 }]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
                 onPress={handleSave}
               >
                 <Text style={styles.saveButtonText}>Save</Text>
@@ -194,20 +208,20 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.textLight,
+    // color: handled dynamically
     marginBottom: 10,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: colors.textLight,
+    // color: handled dynamically
     textAlign: 'center',
   },
   cardItem: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: isMobile ? 10 : 12,
     padding: isMobile ? 12 : 16,
     marginBottom: isMobile ? 10 : 12,
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: {
       width: 0,
       height: 2,
@@ -222,18 +236,18 @@ const styles = StyleSheet.create({
   cardQuestion: {
     fontSize: isMobile ? 14 : 16,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 6,
   },
   cardAnswer: {
     fontSize: isMobile ? 12 : 14,
-    color: colors.textLight,
+    // color: handled dynamically
   },
   cardActions: {
     flexDirection: 'row',
   },
   editButton: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     paddingHorizontal: isMobile ? 12 : 16,
     paddingVertical: isMobile ? 6 : 8,
     borderRadius: isMobile ? 6 : 8,
@@ -244,7 +258,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   deleteButton: {
-    backgroundColor: colors.error,
+    // backgroundColor: handled dynamically
     paddingHorizontal: isMobile ? 12 : 16,
     paddingVertical: isMobile ? 6 : 8,
     borderRadius: isMobile ? 6 : 8,
@@ -255,22 +269,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   masteryButton: {
-    backgroundColor: colors.border,
+    // backgroundColor: handled dynamically
     paddingHorizontal: isMobile ? 10 : 12,
     paddingVertical: isMobile ? 6 : 8,
     borderRadius: isMobile ? 6 : 8,
   },
-  masteryButtonDone: {
-    backgroundColor: colors.success + '20',
-  },
+  // masteryButtonDone handled inline
   masteryButtonText: {
-    color: colors.text,
+    // color: handled dynamically
     fontSize: isMobile ? 11 : 12,
     fontWeight: '600',
   },
-  masteryButtonTextDone: {
-    color: colors.success,
-  },
+  // masteryButtonTextDone handled inline
   addButton: {
     position: 'absolute',
     right: 20,
@@ -278,10 +288,10 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: {
       width: 0,
       height: 4,
@@ -303,7 +313,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 20,
     padding: 25,
     width: '100%',
@@ -312,26 +322,26 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 8,
     marginTop: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    // borderColor: handled dynamically
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
     minHeight: 50,
     textAlignVertical: 'top',
-    color: colors.text,
-    backgroundColor: colors.white,
+    // color: handled dynamically
+    // backgroundColor: handled dynamically
   },
   modalActions: {
     flexDirection: 'row',
@@ -344,15 +354,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   cancelButton: {
-    backgroundColor: colors.border,
+    // backgroundColor: handled dynamically
   },
   cancelButtonText: {
-    color: colors.text,
+    // color: handled dynamically
     fontSize: 16,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
   },
   saveButtonText: {
     color: '#fff',

@@ -11,7 +11,8 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { colors } from '../constants/colors';
+// import { colors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
@@ -26,6 +27,7 @@ import {
 import { getCards } from '../services/cardsService';
 
 export default function FilesScreen({ onNavigate, onStudySet }) {
+  const { theme } = useTheme();
   const { user } = useAuth();
   const [sets, setSets] = useState([]);
   const [cards, setCards] = useState([]);
@@ -134,73 +136,77 @@ export default function FilesScreen({ onNavigate, onStudySet }) {
   };
 
   const toggleCardSelection = (cardId) => {
-    setSelectedCards((prev) =>
-      prev.includes(cardId)
-        ? prev.filter((id) => id !== cardId)
-        : [...prev, cardId]
-    );
+    setSelectedCards((prev) => {
+      const current = prev || [];
+      return current.includes(cardId)
+        ? current.filter((id) => id !== cardId)
+        : [...current, cardId];
+    });
   };
+
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>Study Sets</Text>
-            <Text style={styles.subtitle}>
-              Organize your flashcards into sets
+            <Text style={[styles.title, { color: theme.text }]}>Library</Text>
+            <Text style={[styles.subtitle, { color: theme.textLight }]}>
+              Your Study Sets
             </Text>
           </View>
-          <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
+          <TouchableOpacity style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={openCreateModal}>
             <Text style={styles.createButtonText}>+ New Set</Text>
           </TouchableOpacity>
         </View>
 
-        {sets.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>📁</Text>
-            <Text style={styles.emptyStateTitle}>No Study Sets</Text>
-            <Text style={styles.emptyStateText}>
-              Create your first study set to organize your flashcards
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyStateButton}
-              onPress={openCreateModal}
-            >
-              <Text style={styles.emptyStateButtonText}>Create Set</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.setsGrid}>
-            {sets.map((set) => {
-              const setCards = cards.filter((c) =>
-                (set.cardIds || []).includes(c.id)
-              );
-              return (
-                <StudySetCard
-                  key={set.id}
-                  set={{
-                    ...set,
-                    cardCount: setCards.length,
-                  }}
-                  onPress={() => {}}
-                  onEdit={() => openEditModal(set)}
-                  onDelete={() => handleDelete(set.id)}
-                  onStudy={() => onStudySet(set)}
-                />
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+        {
+          sets.length === 0 ? (
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Text style={styles.emptyStateIcon}>📁</Text>
+              <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No Study Sets</Text>
+              <Text style={[styles.emptyStateText, { color: theme.textLight }]}>
+                Create your first study set to organize your flashcards
+              </Text>
+              <TouchableOpacity
+                style={[styles.emptyStateButton, { backgroundColor: theme.primary }]}
+                onPress={openCreateModal}
+              >
+                <Text style={styles.emptyStateButtonText}>Create Set</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.setsGrid}>
+              {sets.map((set) => {
+                const setCards = cards.filter((c) =>
+                  (set.cardIds || []).includes(c.id)
+                );
+                return (
+                  <StudySetCard
+                    key={set.id}
+                    set={{
+                      ...set,
+                      cardCount: setCards.length,
+                    }}
+                    onPress={() => { }}
+                    onEdit={() => openEditModal(set)}
+                    onDelete={() => handleDelete(set.id)}
+                    onStudy={() => onStudySet(set)}
+                  />
+                );
+              })}
+            </View>
+          )
+        }
+      </ScrollView >
 
       <Modal
         animationType="slide"
@@ -209,29 +215,39 @@ export default function FilesScreen({ onNavigate, onStudySet }) {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
               {editingSet ? 'Edit Study Set' : 'Create Study Set'}
             </Text>
 
-            <Text style={styles.inputLabel}>Set Name *</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Set Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, {
+                backgroundColor: theme.surface === '#FFFFFF' ? '#fff' : theme.background,
+                borderColor: theme.border,
+                color: theme.text
+              }]}
               placeholder="Enter set name"
+              placeholderTextColor={theme.textLight}
               value={setName}
               onChangeText={setSetName}
             />
 
-            <Text style={styles.inputLabel}>Description</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Description</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, {
+                backgroundColor: theme.surface === '#FFFFFF' ? '#fff' : theme.background,
+                borderColor: theme.border,
+                color: theme.text
+              }]}
               placeholder="Enter description (optional)"
-              value={setSetDescription}
+              placeholderTextColor={theme.textLight}
+              value={setDescription}
               onChangeText={setSetDescription}
               multiline
             />
 
-            <Text style={styles.inputLabel}>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>
               Select Cards ({selectedCards.length} selected)
             </Text>
             <ScrollView style={styles.cardsList}>
@@ -242,18 +258,19 @@ export default function FilesScreen({ onNavigate, onStudySet }) {
                     key={card.id}
                     style={[
                       styles.cardItem,
-                      isSelected && styles.cardItemSelected,
+                      { backgroundColor: theme.surface, borderColor: theme.border },
+                      isSelected && { backgroundColor: theme.primary + '15', borderColor: theme.primary },
                     ]}
                     onPress={() => toggleCardSelection(card.id)}
                   >
-                    <Text style={styles.cardCheckbox}>
+                    <Text style={[styles.cardCheckbox, { color: theme.primary }]}>
                       {isSelected ? '✓' : '○'}
                     </Text>
                     <View style={styles.cardContent}>
-                      <Text style={styles.cardQuestion} numberOfLines={1}>
+                      <Text style={[styles.cardQuestion, { color: theme.text }]} numberOfLines={1}>
                         {card.question}
                       </Text>
-                      <Text style={styles.cardAnswer} numberOfLines={1}>
+                      <Text style={[styles.cardAnswer, { color: theme.textLight }]} numberOfLines={1}>
                         {card.answer}
                       </Text>
                     </View>
@@ -264,13 +281,13 @@ export default function FilesScreen({ onNavigate, onStudySet }) {
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.border }]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.primary }]}
                 onPress={handleSave}
               >
                 <Text style={styles.saveButtonText}>Save</Text>
@@ -279,14 +296,14 @@ export default function FilesScreen({ onNavigate, onStudySet }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </View >
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    // backgroundColor: handled dynamically
   },
   scrollView: {
     flex: 1,
@@ -299,7 +316,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    // backgroundColor: handled dynamically
   },
   header: {
     flexDirection: isMobile ? 'column' : 'row',
@@ -311,22 +328,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: isMobile ? 24 : 32,
     fontWeight: 'bold',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 4,
   },
   subtitle: {
     fontSize: isMobile ? 14 : 16,
-    color: colors.textLight,
+    // color: handled dynamically
   },
   createButton: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     paddingHorizontal: isMobile ? 16 : 20,
     paddingVertical: isMobile ? 10 : 12,
     borderRadius: isMobile ? 10 : 12,
     alignSelf: isMobile ? 'flex-start' : 'auto',
   },
   createButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: isMobile ? 14 : 16,
     fontWeight: '600',
   },
@@ -336,7 +353,7 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     padding: 40,
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 16,
     marginTop: 40,
   },
@@ -347,23 +364,23 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 8,
   },
   emptyStateText: {
     fontSize: 16,
-    color: colors.textLight,
+    // color: handled dynamically
     textAlign: 'center',
     marginBottom: 24,
   },
   emptyStateButton: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 12,
   },
   emptyStateButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -375,7 +392,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 20,
     padding: 24,
     width: '100%',
@@ -385,24 +402,24 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 8,
     marginTop: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    // borderColor: handled dynamically
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.white,
+    // color: handled dynamically
+    // backgroundColor: handled dynamically
   },
   textArea: {
     minHeight: 80,
@@ -418,18 +435,15 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: colors.background,
+    // backgroundColor: handled dynamically
     borderWidth: 1,
-    borderColor: colors.border,
+    // borderColor: handled dynamically
   },
-  cardItemSelected: {
-    backgroundColor: colors.primary + '15',
-    borderColor: colors.primary,
-  },
+  // cardItemSelected: handled inline
   cardCheckbox: {
     fontSize: 20,
     marginRight: 12,
-    color: colors.primary,
+    // color: handled dynamically
   },
   cardContent: {
     flex: 1,
@@ -437,12 +451,12 @@ const styles = StyleSheet.create({
   cardQuestion: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    // color: handled dynamically
     marginBottom: 4,
   },
   cardAnswer: {
     fontSize: 12,
-    color: colors.textLight,
+    // color: handled dynamically
   },
   modalActions: {
     flexDirection: 'row',
@@ -456,18 +470,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   cancelButton: {
-    backgroundColor: colors.border,
+    // backgroundColor: handled dynamically
   },
   cancelButtonText: {
-    color: colors.text,
+    // color: handled dynamically
     fontSize: 16,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
   },
   saveButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

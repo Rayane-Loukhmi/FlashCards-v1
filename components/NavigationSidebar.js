@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
-import { colors } from '../constants/colors';
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions, Switch } from 'react-native';
+// import { colors } from '../constants/colors'; // Legacy import, remove if possible or keep for reference
+import { useTheme } from '../contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
@@ -13,6 +14,8 @@ const NAV_ITEMS = {
 };
 
 export default function NavigationSidebar({ currentScreen, onNavigate }) {
+  const { theme, isDark, toggleTheme } = useTheme();
+
   const navItems = [
     { id: NAV_ITEMS.DASHBOARD, label: 'Dashboard', icon: '📊' },
     { id: NAV_ITEMS.MANAGE_CARDS, label: 'Manage Cards', icon: '📝' },
@@ -21,9 +24,9 @@ export default function NavigationSidebar({ currentScreen, onNavigate }) {
   ];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>FlashCards</Text>
+    <View style={[styles.container, { backgroundColor: theme.surface, borderRightColor: theme.border, shadowColor: theme.cardShadow }]}>
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
+        <Text style={[styles.logo, { color: theme.primary }]}>FlashCards</Text>
       </View>
       <View style={styles.navItems}>
         {navItems.map((item) => (
@@ -31,7 +34,7 @@ export default function NavigationSidebar({ currentScreen, onNavigate }) {
             key={item.id}
             style={[
               styles.navItem,
-              currentScreen === item.id && styles.navItemActive,
+              currentScreen === item.id && { backgroundColor: theme.primary + '15' },
             ]}
             onPress={() => onNavigate(item.id)}
           >
@@ -39,13 +42,28 @@ export default function NavigationSidebar({ currentScreen, onNavigate }) {
             <Text
               style={[
                 styles.navLabel,
-                currentScreen === item.id && styles.navLabelActive,
+                { color: theme.text },
+                currentScreen === item.id && { color: theme.primary, fontWeight: '600' },
               ]}
             >
               {item.label}
             </Text>
           </TouchableOpacity>
         ))}
+      </View>
+
+      <View style={[styles.footer, { borderTopColor: theme.border }]}>
+        <View style={styles.themeToggle}>
+          <Text style={[styles.themeLabel, { color: theme.text }]}>
+            {isDark ? '🌙 Dark Mode' : '☀️ Light Mode'}
+          </Text>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: theme.primaryLight }}
+            thumbColor={isDark ? theme.primary : '#f4f3f4'}
+          />
+        </View>
       </View>
     </View>
   );
@@ -56,28 +74,30 @@ export { NAV_ITEMS };
 const styles = StyleSheet.create({
   container: {
     width: isMobile ? 200 : 240,
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRightWidth: 1,
-    borderRightColor: colors.border,
+    // borderRightColor: handled dynamically
     height: '100%',
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: { width: 2, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+    justifyContent: 'space-between',
   },
   header: {
     padding: isMobile ? 16 : 24,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    // borderBottomColor: handled dynamically
   },
   logo: {
     fontSize: isMobile ? 20 : 24,
     fontWeight: 'bold',
-    color: colors.primary,
+    // color: handled dynamically
   },
   navItems: {
     paddingTop: 12,
+    flex: 1,
   },
   navItem: {
     flexDirection: 'row',
@@ -88,9 +108,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
     borderRadius: 12,
   },
-  navItemActive: {
-    backgroundColor: colors.primary + '15',
-  },
+  // navItemActive handled inline
   navIcon: {
     fontSize: isMobile ? 18 : 20,
     marginRight: isMobile ? 10 : 12,
@@ -98,11 +116,22 @@ const styles = StyleSheet.create({
   navLabel: {
     fontSize: isMobile ? 14 : 16,
     fontWeight: '500',
-    color: colors.text,
+    // color: handled dynamically
   },
-  navLabelActive: {
-    color: colors.primary,
-    fontWeight: '600',
+  // navLabelActive handled inline
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    // borderTopColor: handled dynamically
+  },
+  themeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  themeLabel: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

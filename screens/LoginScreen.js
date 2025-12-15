@@ -14,9 +14,11 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import { colors } from '../constants/colors';
+// import { colors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function LoginScreen() {
+  const { theme, isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -44,7 +46,7 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Auth error:', error);
       let errorMessage = 'An error occurred';
-      
+
       // Check if Firebase is configured
       if (error.message && error.message.includes('YOUR_API_KEY')) {
         errorMessage = 'Firebase is not configured. Please set up Firebase first. See FIREBASE_SETUP.md';
@@ -70,7 +72,7 @@ export default function LoginScreen() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
@@ -78,23 +80,27 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="auto" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar style={theme.statusBarStyle} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>FlashCards</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: theme.primary }]}>FlashCards</Text>
+          <Text style={[styles.subtitle, { color: theme.textLight }]}>
             {isSignUp ? 'Create your account' : 'Welcome back!'}
           </Text>
 
           <View style={styles.form}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                color: theme.text
+              }]}
               placeholder="Email"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.textLight}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -103,9 +109,13 @@ export default function LoginScreen() {
             />
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                color: theme.text
+              }]}
               placeholder="Password"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.textLight}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -114,7 +124,11 @@ export default function LoginScreen() {
             />
 
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                { backgroundColor: theme.primary, shadowColor: theme.cardShadow },
+                loading && styles.buttonDisabled
+              ]}
               onPress={handleAuth}
               disabled={loading}
             >
@@ -132,7 +146,7 @@ export default function LoginScreen() {
               onPress={() => setIsSignUp(!isSignUp)}
               disabled={loading}
             >
-              <Text style={styles.switchButtonText}>
+              <Text style={[styles.switchButtonText, { color: theme.primary }]}>
                 {isSignUp
                   ? 'Already have an account? Sign In'
                   : "Don't have an account? Sign Up"}
@@ -148,7 +162,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    // backgroundColor: handled dynamically
   },
   keyboardView: {
     flex: 1,
@@ -161,13 +175,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 42,
     fontWeight: 'bold',
-    color: colors.primary,
+    // color: handled dynamically
     textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 18,
-    color: colors.textLight,
+    // color: handled dynamically
     textAlign: 'center',
     marginBottom: 40,
   },
@@ -175,22 +189,22 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   input: {
-    backgroundColor: colors.white,
+    // backgroundColor: handled dynamically
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text,
+    // borderColor: handled dynamically
+    // color: handled dynamically
   },
   button: {
-    backgroundColor: colors.primary,
+    // backgroundColor: handled dynamically
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: colors.cardShadow,
+    // shadowColor: handled dynamically
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -209,7 +223,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchButtonText: {
-    color: colors.primary,
+    // color: handled dynamically
     fontSize: 16,
   },
 });

@@ -9,6 +9,7 @@ import {
   doc,
   orderBy,
   Timestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -103,3 +104,26 @@ export const deleteCard = async (cardId) => {
   }
 };
 
+
+export const batchCreateCards = async (cards) => {
+  try {
+    const batch = writeBatch(db);
+    const cardsRef = collection(db, 'cards');
+
+    cards.forEach(card => {
+      const newCardRef = doc(cardsRef);
+      batch.set(newCardRef, {
+        ...card,
+        createdAt: Timestamp.now(),
+        mastered: false,
+        timesStudied: 0,
+      });
+    });
+
+    await batch.commit();
+    return true;
+  } catch (error) {
+    console.error('Error batch creating cards:', error);
+    throw error;
+  }
+};

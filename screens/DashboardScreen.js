@@ -5,315 +5,322 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  Image,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
-import { colors } from '../constants/colors';
-
-const screenWidth = Dimensions.get('window').width;
-const isMobile = screenWidth < 768;
+import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getCards } from '../services/cardsService';
+import { useXp } from '../contexts/XpContext';
 import { getStudySets } from '../services/setsService';
 
-export default function DashboardScreen({ onNavigate, onStudySet, cards: propCards }) {
+const screenWidth = Dimensions.get('window').width;
+
+export default function DashboardScreen({ onNavigate, onStudySet, cards }) {
+  const { theme } = useTheme();
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    totalCards: 0,
-    totalSets: 0,
-    masteredCards: 0,
-    recentActivity: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { dailyProgress, dailyGoal, streak, currentRank } = useXp();
+  const [sets, setSets] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
+  const loadData = async () => {
     if (!user) return;
     try {
-      setLoading(true);
-      const cardsData = propCards || await getCards(user.uid);
-      const sets = await getStudySets(user.uid);
-      
-      const masteredCards = cardsData.filter((card) => card.mastered).length;
-      const recentActivity = cardsData.filter((card) => {
-        if (!card.lastStudied) return false;
-        const lastStudied = card.lastStudied.toDate();
-        const daysSince = (Date.now() - lastStudied.getTime()) / (1000 * 60 * 60 * 24);
-        return daysSince <= 7;
-      }).length;
-
-      setStats({
-        totalCards: cardsData.length,
-        totalSets: sets.length,
-        masteredCards,
-        recentActivity,
-      });
+      const userSets = await getStudySets(user.uid);
+      setSets(userSets);
     } catch (error) {
-      console.error('Error loading stats:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading sets:', error);
     }
   };
 
-  const StatCard = ({ title, value, subtitle, icon, color }) => (
-    <View style={[styles.statCard, { borderLeftColor: color }]}>
-      <View style={styles.statHeader}>
-        <Text style={styles.statIcon}>{icon}</Text>
-        <Text style={styles.statTitle}>{title}</Text>
-      </View>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
-    </View>
-  );
+  useEffect(() => {
+    loadData();
+  }, [user]);
 
-  const QuickAction = ({ title, description, icon, onPress, color }) => (
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, []);
+
+  const RecentSetCard = ({ set }) => (
     <TouchableOpacity
-      style={[styles.quickAction, { borderColor: color }]}
-      onPress={onPress}
+      style={[styles.recentCard, { backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}
+      onPress={() => onStudySet(set)}
     >
-      <Text style={styles.quickActionIcon}>{icon}</Text>
-      <View style={styles.quickActionContent}>
-        <Text style={styles.quickActionTitle}>{title}</Text>
-        <Text style={styles.quickActionDescription}>{description}</Text>
+      <Text style={[styles.recentCardTitle, { color: theme.text }]} numberOfLines={2}>
+        {set.name}
+      </Text>
+      <View style={styles.recentCardFooter}>
+        <Text style={[styles.recentCardCount, { color: theme.textLight }]}>
+          {set.cardIds?.length || 0} terms
+        </Text>
+        <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary }]}>
+          <Text style={styles.avatarText}>{user?.email?.[0].toUpperCase()}</Text>
+        </View>
       </View>
-      <Text style={[styles.quickActionArrow, { color }]}>→</Text>
     </TouchableOpacity>
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.subtitle}>Your learning overview</Text>
-      </View>
-
-      <View style={styles.statsGrid}>
-        <StatCard
-          title="Total Cards"
-          value={stats.totalCards}
-          subtitle="Flashcards created"
-          icon="📚"
-          color={colors.primary}
-        />
-        <StatCard
-          title="Study Sets"
-          value={stats.totalSets}
-          subtitle="Organized sets"
-          icon="📁"
-          color={colors.primaryLight}
-        />
-        <StatCard
-          title="Mastered"
-          value={stats.masteredCards}
-          subtitle={`${stats.totalCards > 0 ? Math.round((stats.masteredCards / stats.totalCards) * 100) : 0}% complete`}
-          icon="✅"
-          color={colors.success}
-        />
-        <StatCard
-          title="This Week"
-          value={stats.recentActivity}
-          subtitle="Cards studied"
-          icon="🔥"
-          color={colors.warning}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <QuickAction
-          title="Create New Set"
-          description="Organize your flashcards"
-          icon="➕"
-          color={colors.primary}
-          onPress={() => onNavigate('files')}
-        />
-        <QuickAction
-          title="Add Cards"
-          description="Create new flashcards"
-          icon="📝"
-          color={colors.primary}
-          onPress={() => onNavigate('manage')}
-        />
-        <QuickAction
-          title="View Progress"
-          description="Track your learning"
-          icon="📈"
-          color={colors.primary}
-          onPress={() => onNavigate('progress')}
-        />
-        {propCards && propCards.length > 0 && (
-          <QuickAction
-            title="Study All Cards"
-            description="Start studying all flashcards"
-            icon="🎯"
-            color={colors.primary}
-            onPress={() => onStudySet && onStudySet('all')}
-          />
-        )}
-      </View>
-
-        {(propCards ? propCards.length === 0 : stats.totalCards === 0) && (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>🎯</Text>
-          <Text style={styles.emptyStateTitle}>Get Started!</Text>
-          <Text style={styles.emptyStateText}>
-            Create your first flashcard to begin learning
-          </Text>
-          <TouchableOpacity
-            style={styles.emptyStateButton}
-            onPress={() => onNavigate('manage')}
-          >
-            <Text style={styles.emptyStateButtonText}>Create Flashcard</Text>
-          </TouchableOpacity>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.primary }]}>
+        <View style={styles.headerTop}>
+          <Text style={styles.greeting}>Hello, {user?.email?.split('@')[0] || 'Student'}</Text>
+          <View style={styles.headerIcons}>
+          </View>
         </View>
-      )}
-    </ScrollView>
+        <View style={styles.searchContainer}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            placeholder="Search flashcards"
+            placeholderTextColor="#A0A0A0"
+            style={styles.searchInput}
+          />
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+      >
+        {/* Daily Progress Section */}
+        <View style={styles.section}>
+          <View style={[styles.progressCard, { backgroundColor: theme.surface, shadowColor: theme.cardShadow }]}>
+            <View style={styles.progressHeader}>
+              <View>
+                <Text style={[styles.progressTitle, { color: theme.text }]}>Daily Goal</Text>
+                <Text style={[styles.rankText, { color: currentRank.color }]}>{currentRank.name} Rank</Text>
+              </View>
+              <View style={[styles.streakContainer, { backgroundColor: theme.secondary + '20' }]}>
+                <Text style={styles.streakEmoji}>🔥</Text>
+                <Text style={[styles.streakCount, { color: theme.secondary }]}>{streak}</Text>
+              </View>
+            </View>
+
+            <View style={styles.progressBarBg}>
+              <View style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.min((dailyProgress / dailyGoal) * 100, 100)}%`,
+                  backgroundColor: dailyProgress >= dailyGoal ? theme.success : theme.primary
+                }
+              ]} />
+            </View>
+
+            <View style={styles.progressFooter}>
+              <Text style={[styles.progressText, { color: theme.textLight }]}>
+                {dailyProgress} / {dailyGoal} XP
+              </Text>
+              {dailyProgress >= dailyGoal && (
+                <Text style={{ color: theme.success, fontWeight: 'bold' }}>Completed!</Text>
+              )}
+            </View>
+
+            <TouchableOpacity onPress={() => onNavigate('quests')} style={styles.viewQuestsBtn}>
+              <Text style={[styles.viewQuestsText, { color: theme.primary }]}>View Quests &rarr;</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Recent Sets */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent</Text>
+            <TouchableOpacity onPress={() => onNavigate('files')}>
+              <Text style={[styles.seeAll, { color: theme.primary }]}>See all</Text>
+            </TouchableOpacity>
+          </View>
+
+          {sets.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+              {sets.map(set => <RecentSetCard key={set.id} set={set} />)}
+            </ScrollView>
+          ) : (
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Text style={{ color: theme.textLight }}>No sets found. Create one!</Text>
+              <TouchableOpacity onPress={() => onNavigate('manage')}>
+                <Text style={{ color: theme.primary, fontWeight: 'bold', marginTop: 8 }}>Create Set</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: isMobile ? 16 : 24,
-    paddingTop: isMobile ? 60 : 24,
   },
   header: {
-    marginBottom: isMobile ? 20 : 32,
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
-  title: {
-    fontSize: isMobile ? 24 : 32,
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  greeting: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
+    color: '#FFFFFF',
   },
-  subtitle: {
-    fontSize: isMobile ? 14 : 16,
-    color: colors.textLight,
-  },
-  statsGrid: {
+  searchContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: isMobile ? 20 : 32,
-    gap: isMobile ? 12 : 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignItems: 'center',
   },
-  statCard: {
-    backgroundColor: colors.white,
-    borderRadius: isMobile ? 12 : 16,
-    padding: isMobile ? 16 : 20,
-    width: isMobile ? '100%' : '48%',
-    borderLeftWidth: 4,
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    marginBottom: isMobile ? 8 : 0,
+  searchIcon: {
+    marginRight: 8,
+    fontSize: 16,
   },
-  statHeader: {
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingBottom: 80,
+  },
+  section: {
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  statIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  statTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textLight,
-  },
-  statValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statSubtitle: {
-    fontSize: 12,
-    color: colors.textLight,
-  },
-  section: {
-    marginBottom: 32,
-  },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 16,
   },
-  quickAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: isMobile ? 10 : 12,
-    padding: isMobile ? 12 : 16,
-    marginBottom: isMobile ? 10 : 12,
-    borderWidth: 1,
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  quickActionIcon: {
-    fontSize: isMobile ? 20 : 24,
-    marginRight: isMobile ? 12 : 16,
-  },
-  quickActionContent: {
-    flex: 1,
-  },
-  quickActionTitle: {
-    fontSize: isMobile ? 14 : 16,
+  seeAll: {
     fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
   },
-  quickActionDescription: {
-    fontSize: isMobile ? 12 : 14,
-    color: colors.textLight,
+  horizontalScroll: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
   },
-  quickActionArrow: {
-    fontSize: isMobile ? 18 : 20,
+  recentCard: {
+    width: 160,
+    height: 120,
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 12,
+    justifyContent: 'space-between',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  recentCardTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  recentCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  recentCardCount: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  avatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#FFF',
+    fontSize: 10,
     fontWeight: 'bold',
   },
   emptyState: {
+    padding: 20,
+    borderRadius: 12,
     alignItems: 'center',
-    padding: 40,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    marginTop: 20,
+    justifyContent: 'center',
   },
-  emptyStateIcon: {
-    fontSize: 64,
+  // Progress Card Styles
+  progressCard: {
+    padding: 20,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
-  emptyStateTitle: {
-    fontSize: 24,
+  progressTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
+  },
+  rankText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  streakEmoji: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  streakCount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  progressBarBg: {
+    height: 12,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 6,
+    overflow: 'hidden',
     marginBottom: 8,
   },
-  emptyStateText: {
-    fontSize: 16,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: 24,
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 6,
   },
-  emptyStateButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
+  progressFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  emptyStateButtonText: {
-    color: colors.white,
-    fontSize: 16,
+  progressText: {
+    fontSize: 14,
+  },
+  viewQuestsBtn: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  viewQuestsText: {
     fontWeight: '600',
-  },
+  }
 });
-

@@ -2,22 +2,24 @@ import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
-  SafeAreaView,
   ActivityIndicator,
   Text,
-  TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { XpProvider } from './contexts/XpContext';
 import LoginScreen from './screens/LoginScreen';
-import NavigationSidebar, { NAV_ITEMS } from './components/NavigationSidebar';
+import BottomTabBar, { NAV_ITEMS } from './components/BottomTabBar';
 import DashboardScreen from './screens/DashboardScreen';
 import ManageCardsScreen from './screens/ManageCardsScreen';
 import FilesScreen from './screens/FilesScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import StudyModesScreen from './screens/StudyModesScreen';
-import { colors } from './constants/colors';
+import QuestsScreen from './screens/QuestsScreen';
+// import { colors } from './constants/colors';
 import {
   getCards,
   addCard as addCardToFirestore,
@@ -29,11 +31,11 @@ import {
 
 function MainApp() {
   const { user, loading, signOut } = useAuth();
+  const { theme, isDark } = useTheme();
   const [currentScreen, setCurrentScreen] = useState(NAV_ITEMS.DASHBOARD);
   const [studyView, setStudyView] = useState(null); // null, 'all', or studySet object
   const [cards, setCards] = useState([]);
   const [cardsLoading, setCardsLoading] = useState(true);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
   const screenWidth = Dimensions.get('window').width;
   const isMobile = screenWidth < 768;
 
@@ -62,10 +64,6 @@ function MainApp() {
   const handleNavigate = (screen) => {
     setCurrentScreen(screen);
     setStudyView(null);
-    // Auto-hide sidebar on mobile after navigation
-    if (isMobile) {
-      setSidebarVisible(false);
-    }
   };
 
   const handleStudySet = (set) => {
@@ -119,11 +117,11 @@ function MainApp() {
           cards.map((c) =>
             c.id === cardId
               ? {
-                  ...c,
-                  mastered: true,
-                  lastStudied: new Date(),
-                  timesStudied: (c.timesStudied || 0) + 1,
-                }
+                ...c,
+                mastered: true,
+                lastStudied: new Date(),
+                timesStudied: (c.timesStudied || 0) + 1,
+              }
               : c
           )
         );
@@ -143,10 +141,10 @@ function MainApp() {
 
   if (loading || cardsLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.textLight }]}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
@@ -156,22 +154,28 @@ function MainApp() {
     return <LoginScreen />;
   }
 
-  // Study view (when studying a set or all cards)
+  // Study view (when studying a set or all cards) covers the whole screen (no tab bar usually, but Quizlet keeps it or hides it)
+  // For simplicity, let's keep it full screen overlay like before.
   if (studyView !== null) {
     let cardsToStudy = cards;
     if (studyView !== 'all' && studyView.cardIds) {
       cardsToStudy = cards.filter((c) => studyView.cardIds.includes(c.id));
     }
 
+    const setInfo = studyView === 'all'
+      ? { name: 'All Cards', description: 'Studying all available flashcards' }
+      : studyView;
+
     return (
       <StudyModesScreen
         cards={cardsToStudy}
+        setInfo={setInfo}
         onBack={handleBackFromStudy}
       />
     );
   }
 
-  // Main app with navigation
+  // Main app with bottom navigation
   const renderScreen = () => {
     switch (currentScreen) {
       case NAV_ITEMS.DASHBOARD:
@@ -182,6 +186,8 @@ function MainApp() {
             cards={cards}
           />
         );
+      case NAV_ITEMS.QUESTS:
+        return <QuestsScreen />;
       case NAV_ITEMS.MANAGE_CARDS:
         return (
           <ManageCardsScreen
@@ -200,6 +206,7 @@ function MainApp() {
           />
         );
       case NAV_ITEMS.PROGRESS:
+        // Using Progress as Profile placeholder
         return <ProgressScreen />;
       default:
         return (
@@ -212,37 +219,16 @@ function MainApp() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="auto" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
+      <StatusBar style={theme.statusBarStyle} />
       <View style={styles.appContainer}>
-        {sidebarVisible && (
-          <>
-            {isMobile && (
-              <TouchableOpacity
-                style={styles.backdrop}
-                activeOpacity={1}
-                onPress={() => setSidebarVisible(false)}
-              />
-            )}
-            <View style={[styles.sidebarContainer, isMobile && styles.sidebarMobile]}>
-              <NavigationSidebar
-                currentScreen={currentScreen}
-                onNavigate={handleNavigate}
-              />
-            </View>
-          </>
-        )}
-        <View style={[styles.contentArea, !sidebarVisible && styles.contentAreaFull]}>
-          <TouchableOpacity
-            style={styles.toggleButton}
-            onPress={() => setSidebarVisible(!sidebarVisible)}
-          >
-            <Text style={styles.toggleButtonText}>
-              ☰
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.contentArea}>
           {renderScreen()}
         </View>
+        <BottomTabBar
+          currentScreen={currentScreen}
+          onNavigate={handleNavigate}
+        />
       </View>
     </SafeAreaView>
   );
@@ -250,75 +236,30 @@ function MainApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <XpProvider>
+            <MainApp />
+          </XpProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    // Background color is handled dynamically
   },
   appContainer: {
     flex: 1,
-    flexDirection: 'row',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 99,
-  },
-  sidebarContainer: {
-    zIndex: 10,
-  },
-  sidebarMobile: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    zIndex: 100,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
+    flexDirection: 'column', // Changed to column
   },
   contentArea: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  contentAreaFull: {
-    width: '100%',
-  },
-  toggleButton: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    zIndex: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  toggleButtonText: {
-    fontSize: 20,
-    color: colors.primary,
-    fontWeight: 'bold',
+    // Background color handled dynamically
   },
   loadingContainer: {
     flex: 1,
@@ -328,6 +269,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.textLight,
+    // color handled dynamically
   },
 });
